@@ -559,6 +559,164 @@ def compute_cot_sentiment(cot_data):
 
 
 # ---------------------------------------------------------------------------
+# Cross-commodity correlation matrix
+# ---------------------------------------------------------------------------
+
+def compute_cross_commodity_correlations(futures_data):
+    """Compute pairwise price correlation matrix across all commodities.
+
+    Uses monthly returns (not raw prices) to remove trend bias.
+    Also identifies the strongest positive and negative correlations.
+
+    Args:
+        futures_data: Cached futures price data dict.
+
+    Returns:
+        Dict with correlation matrix and notable pairs:
+        {
+            "matrix": {commodity -> {commodity -> float}},
+            "strongest_positive": [{"pair": [str, str], "r": float}],
+            "strongest_negative": [{"pair": [str, str], "r": float}],
+            "commodities": [str],
+        }
+    """
+    import pandas as pd
+
+    if not futures_data:
+        return {}
+
+    # Build a DataFrame of daily close prices
+    price_frames = {}
+    for commodity, fdata in futures_data.items():
+        close = fdata.get("close", [])
+        dates = fdata.get("dates", [])
+        if close and dates:
+            price_frames[commodity] = pd.Series(
+                close, index=pd.to_datetime(dates), name=commodity
+            )
+
+    if len(price_frames) < 2:
+        return {}
+
+    prices_df = pd.DataFrame(price_frames)
+
+    # Resample to monthly returns for cleaner correlation
+    monthly = prices_df.resample("MS").last()
+    returns = monthly.pct_change().dropna()
+
+    if len(returns) < 6:
+        return {}
+
+    # Correlation matrix
+    corr = returns.corr()
+    matrix = {}
+    for c1 in corr.columns:
+        matrix[c1] = {c2: round(float(corr.loc[c1, c2]), 3) for c2 in corr.columns}
+
+    # Find notable pairs
+    pairs = []
+    cols = list(corr.columns)
+    for i in range(len(cols)):
+        for j in range(i + 1, len(cols)):
+            r = float(corr.loc[cols[i], cols[j]])
+            pairs.append({"pair": [cols[i], cols[j]], "r": round(r, 3)})
+
+    pairs.sort(key=lambda p: p["r"], reverse=True)
+    strongest_pos = [p for p in pairs if p["r"] > 0.3][:5]
+    strongest_neg = [p for p in pairs if p["r"] < -0.3][:5]
+
+    return {
+        "matrix": matrix,
+        "strongest_positive": strongest_pos,
+        "strongest_negative": strongest_neg,
+        "commodities": cols,
+        "months_analyzed": len(returns),
+    }
+
+
+def compute_yield_price_correlation(crops_data, futures_data):
+    """Compute correlation between annual crop yields and average annual prices.
+
+    This is the core fundamental analysis: do years with lower yields
+    correspond to higher prices?
+
+    Args:
+        crops_data: Cached USDA crop data dict.
+        futures_data: Cached futures price data dict.
+
+    Returns:
+        Dict mapping commodity -> yield-price correlation:
+        {
+            "years": [int],
+            "yields": [float],
+            "avg_annual_price": [float],
+            "correlation": float,
+            "interpretation": str,
+        }
+    """
+    import pandas as pd
+
+    if not crops_data or not futures_data:
+        return {}
+
+    results = {}
+    for commodity, cdata in crops_data.items():
+        if commodity not in futures_data:
+            continue
+
+        years = cdata.get("yield_history", {}).get("years", [])
+        yields = cdata.get("yield_history", {}).get("yields", [])
+        if not years or not yields:
+            continue
+
+        # Compute average annual price from daily data
+        fdata = futures_data[commodity]
+        price_series = pd.Series(
+            fdata["close"], index=pd.to_datetime(fdata["dates"])
+        )
+        annual_prices = price_series.resample("YS").mean()
+
+        # Align years
+        aligned_years = []
+        aligned_yields = []
+        aligned_prices = []
+        for i, year in enumerate(years):
+            yr_dt = pd.Timestamp(f"{year}-01-01")
+            if yr_dt in annual_prices.index and yields[i] is not None:
+                aligned_years.append(year)
+                aligned_yields.append(yields[i])
+                aligned_prices.append(round(float(annual_prices.loc[yr_dt]), 2))
+
+        if len(aligned_years) < 3:
+            continue
+
+        arr_y = np.array(aligned_yields)
+        arr_p = np.array(aligned_prices)
+        r = float(np.corrcoef(arr_y, arr_p)[0, 1])
+
+        if r < -0.4:
+            interp = "Strong inverse: low yields → high prices (classic supply shock)"
+        elif r < -0.2:
+            interp = "Moderate inverse: yields influence prices"
+        elif r > 0.4:
+            interp = "Positive: high yields and high prices (demand era)"
+        elif r > 0.2:
+            interp = "Weak positive: demand outweighs supply effects"
+        else:
+            interp = "Weak linkage: other factors dominate"
+
+        results[commodity] = {
+            "years": aligned_years,
+            "yields": aligned_yields,
+            "avg_annual_price": aligned_prices,
+            "correlation": round(r, 3),
+            "interpretation": interp,
+        }
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Signal generation
 # ---------------------------------------------------------------------------
 
@@ -745,6 +903,7 @@ def process_all():
     crops_data = _load_cache("crops")
     cot_data = _load_cache("cot")
     geopolitical_data = _load_cache("geopolitical")
+    fred_data = _load_cache("fred")
 
     # Crop health scoring (requires satellite data)
     crop_scores = {}
@@ -785,6 +944,26 @@ def process_all():
             sent["percentile"], sent["contrarian_signal"],
         )
 
+    # Cross-commodity correlation matrix
+    cross_corr = compute_cross_commodity_correlations(futures_data)
+    if cross_corr:
+        logger.info(
+            "Cross-commodity: %d months analyzed, %d commodities",
+            cross_corr.get("months_analyzed", 0), len(cross_corr.get("commodities", [])),
+        )
+        for p in cross_corr.get("strongest_positive", [])[:3]:
+            logger.info("  Strong +: %s ↔ %s r=%.3f", p["pair"][0], p["pair"][1], p["r"])
+        for p in cross_corr.get("strongest_negative", [])[:3]:
+            logger.info("  Strong -: %s ↔ %s r=%.3f", p["pair"][0], p["pair"][1], p["r"])
+
+    # Yield-price correlation (annual, long history)
+    yield_price = compute_yield_price_correlation(crops_data, futures_data)
+    for commodity, yp in yield_price.items():
+        logger.info(
+            "  %s yield-price r=%.3f over %d years (%s)",
+            commodity, yp["correlation"], len(yp["years"]), yp["interpretation"],
+        )
+
     # Generate cross-dataset signals
     signals = _generate_signals(
         crop_summary, weather_data, futures_data, cot_data, geopolitical_data
@@ -798,12 +977,15 @@ def process_all():
     results["price_ndvi_correlation"] = price_ndvi
     results["weather_impact"] = weather_impact
     results["cot_sentiment"] = cot_sentiment
+    results["cross_commodity_correlations"] = cross_corr
+    results["yield_price_correlation"] = yield_price
     results["signals"] = signals
     results["weather"] = weather_data
     results["futures"] = futures_data
     results["crops"] = crops_data
     results["cot"] = cot_data
     results["geopolitical"] = geopolitical_data
+    results["fred"] = fred_data
 
     return results
 

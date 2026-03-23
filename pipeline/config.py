@@ -23,7 +23,7 @@ CACHE_DIR = PIPELINE_DIR / "cache"
 DOCS_DATA_DIR = PROJECT_ROOT / "docs" / "data"
 
 # -- Time Ranges --
-DEFAULT_START_DATE = date(2023, 1, 1)
+DEFAULT_START_DATE = date(2005, 1, 1)
 DEFAULT_END_DATE = date.today() - timedelta(days=1)  # Yesterday (latest complete day)
 
 # -- Growing Regions --
@@ -105,6 +105,7 @@ APPEEARS_BASE_URL = "https://appeears.earthdatacloud.nasa.gov/api"
 OPEN_METEO_ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 # USDA NASS QuickStats: crop production, yield, and acreage data (free key required).
 NASS_BASE_URL = "https://quickstats.nass.usda.gov/api/api_GET"
+FRED_BASE_URL = "https://api.stlouisfed.org/fred"
 # CFTC Commitments of Traders: weekly hedge fund positioning (public, no key needed).
 # URL is templated with {year} for annual ZIP archives.
 CFTC_COT_BASE_URL = "https://www.cftc.gov/files/dea/history/fut_disagg_txt_{year}.zip"
