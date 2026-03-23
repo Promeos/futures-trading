@@ -2,6 +2,19 @@
 
 You maintain and extend the Futures Trading Python data pipeline in `pipeline/`.
 
+## Current Status
+
+| Module | Status |
+|--------|--------|
+| `config.py` | Complete — commodities, regions, API endpoints, time ranges |
+| `fetch_weather.py` | Complete — Open-Meteo + Drought Monitor, synthetic fallback |
+| `fetch_satellites.py` | Complete — AppEEARS NDVI + Open-Meteo soil moisture, synthetic fallback |
+| `fetch_crops.py` | **Not yet built** — see fetcher-builder agent |
+| `fetch_futures.py` | **Not yet built** — see fetcher-builder agent |
+| `fetch_geopolitical.py` | **Not yet built** — see fetcher-builder agent |
+| `process.py` | Partial — crop health scoring only, needs correlations and signals |
+| `export.py` | **Not yet built** — see fetcher-builder agent |
+
 ## Entry Points
 ```bash
 python -m pipeline.export              # Full pipeline: fetch → process → export JSON

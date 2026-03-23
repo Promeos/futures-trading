@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Futures Trading — Satellite &amp; Geopolitical Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Futures Trading Dashboard</h1>
+      <span id="last-updated" class="last-updated"></span>
+    </div>
+  </header>
+
+  <main class="container" id="dashboard-content">
+    <!-- Summary Metrics -->
+    <section class="section">
+      <div class="summary-grid">
+        <div class="card metric-card" id="metric-commodities">
+          <div class="metric-value">--</div>
+          <div class="metric-label">Commodities</div>
+        </div>
+        <div class="card metric-card" id="metric-signals">
+          <div class="metric-value">--</div>
+          <div class="metric-label">Active Signals</div>
+        </div>
+        <div class="card metric-card" id="metric-regions">
+          <div class="metric-value">--</div>
+          <div class="metric-label">Regions</div>
+        </div>
+        <div class="card metric-card" id="metric-sources">
+          <div class="metric-value">--</div>
+          <div class="metric-label">Data Sources</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="section">
+      <div class="chart-grid">
+        <div class="card">
+          <h2>Commodity Prices</h2>
+          <div id="chart-prices" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h2>Weather Anomalies</h2>
+          <div id="chart-weather" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h2>Crop Yields</h2>
+          <div id="chart-crops" class="chart-container"></div>
+        </div>
+        <div class="card">
+          <h2>Price Correlations</h2>
+          <div id="chart-correlations" class="chart-container"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Active Signals -->
+    <section class="section">
+      <div class="card">
+        <h2>Active Signals</h2>
+        <ul id="signals-list" class="signals-list">
+          <li class="signal-item">
+            <span class="signal-message loading">Loading signals...</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Commodity Table -->
+    <section class="section">
+      <div class="card">
+        <h2>Commodity Overview</h2>
+        <table class="commodity-table">
+          <thead>
+            <tr>
+              <th>Commodity</th>
+              <th>Price</th>
+              <th>20d Change</th>
+              <th>Price-NDVI r</th>
+              <th>COT Sentiment</th>
+              <th>Signal</th>
+            </tr>
+          </thead>
+          <tbody id="commodity-tbody">
+            <tr><td colspan="6" class="loading">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>This product uses the NASS API but is not endorsed or certified by NASS.</p>
+      <p>For educational and research purposes only. Not financial advice.</p>
+      <p>Licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC-BY-4.0</a></p>
+    </div>
+  </footer>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

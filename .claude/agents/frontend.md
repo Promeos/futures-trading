@@ -2,6 +2,16 @@
 
 You build and enhance the Futures Trading dashboard in `docs/`.
 
+## Current Status
+
+- `index.html` — Dashboard skeleton with metric cards, chart grid, signals list, commodity table
+- `crop_health.html` — Standalone crop health visualization (Plotly, not linked from index.html)
+- `js/dashboard.js` — Rendering functions for all 5 JSON data files (complete)
+- `css/style.css` — Dark theme with full CSS custom properties (complete)
+- `docs/data/` — **Empty** — no JSON files yet (pipeline export not implemented)
+
+The frontend code is ready to render data once the pipeline produces JSON output.
+
 ## Stack
 - **Charts:** Plotly.js loaded via CDN
 - **JavaScript:** Vanilla JS in `docs/js/dashboard.js` — no frameworks
