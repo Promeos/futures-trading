@@ -251,8 +251,10 @@ function renderCorrelationChart(commodities, signals) {
   }], {
     ...plotlyLayout,
     annotations,
+    xaxis: { ...plotlyLayout.xaxis, type: "category" },
+    yaxis: { ...plotlyLayout.yaxis, type: "category", autorange: "reversed" },
     title: { text: `Cross-Commodity Correlations (${crossCorr.months_analyzed} months)`, font: { size: 14 } },
-  }, plotlyConfig);
+  }, { responsive: true, displayModeBar: true, modeBarButtonsToAdd: ["resetScale2d"] });
 }
 
 // ---------------------------------------------------------------------------
