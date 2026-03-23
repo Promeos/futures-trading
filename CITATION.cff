@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Futures Trading: Satellite & Geopolitical Data Connected to Commodity Markets"
+abstract: >-
+  An open-source data pipeline and interactive dashboard connecting satellite imagery,
+  weather data, crop yields, and geopolitical events to commodity futures markets.
+  Democratizing Bloomberg Terminal-level data for everyday people.
+authors:
+  - family-names: Ortiz
+    given-names: Christopher Logan
+    email: christopher.logan.ortiz@gmail.com
+repository-code: "https://github.com/Promeos/futures-trading"
+url: "https://promeos.github.io/futures-trading/"
+license: CC-BY-4.0
+keywords:
+  - commodity-futures
+  - satellite-imagery
+  - weather-data
+  - crop-yields
+  - geopolitical-analysis
+  - data-pipeline
+  - agricultural-data
+  - anomaly-detection
+date-released: "2026-03-22"
