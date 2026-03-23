@@ -204,45 +204,54 @@ function renderCropChart(crops) {
 }
 
 // ---------------------------------------------------------------------------
-// Correlation chart (Price-NDVI + COT sentiment)
+// Correlation heatmap (cross-commodity price correlations)
 // ---------------------------------------------------------------------------
 
-function renderCorrelationChart(commodities) {
+function renderCorrelationChart(commodities, signals) {
   const el = document.getElementById("chart-correlations");
   if (!el) return;
 
-  const names = [];
-  const ndviCorr = [];
-  const cotZ = [];
-
-  Object.entries(commodities).forEach(([name, d]) => {
-    const corr = d.price_ndvi_correlation?.overall_r;
-    const cz = d.cot_sentiment?.z_score;
-    if (corr != null || cz != null) {
-      names.push(capitalize(name));
-      ndviCorr.push(corr ?? 0);
-      cotZ.push(cz ?? 0);
-    }
-  });
-
-  if (!names.length) {
+  const crossCorr = signals.cross_commodity_correlations;
+  if (!crossCorr || !crossCorr.matrix) {
     el.innerHTML = '<div class="loading">No correlation data available</div>';
     return;
   }
 
-  Plotly.newPlot(el, [
-    {
-      x: names, y: ndviCorr, name: "Price-NDVI Corr",
-      type: "bar", marker: { color: "#34d399" },
-    },
-    {
-      x: names, y: cotZ, name: "COT Sentiment (z)",
-      type: "bar", marker: { color: "#f472b6" },
-    },
-  ], {
+  const names = crossCorr.commodities.map(capitalize);
+  const matrix = crossCorr.commodities.map(c1 =>
+    crossCorr.commodities.map(c2 => crossCorr.matrix[c1][c2])
+  );
+
+  // Annotate cells with values
+  const annotations = [];
+  for (let i = 0; i < names.length; i++) {
+    for (let j = 0; j < names.length; j++) {
+      annotations.push({
+        x: names[j], y: names[i],
+        text: matrix[i][j].toFixed(2),
+        font: { color: Math.abs(matrix[i][j]) > 0.4 ? "#fff" : "#8b8fa3", size: 11 },
+        showarrow: false,
+      });
+    }
+  }
+
+  Plotly.newPlot(el, [{
+    z: matrix,
+    x: names,
+    y: names,
+    type: "heatmap",
+    colorscale: [
+      [0, "#ef4444"],
+      [0.5, "#1a1d27"],
+      [1, "#34d399"],
+    ],
+    zmin: -1, zmax: 1,
+    showscale: true,
+    colorbar: { title: "r", tickfont: { color: "#8b8fa3" }, titlefont: { color: "#8b8fa3" } },
+  }], {
     ...plotlyLayout,
-    yaxis: { ...plotlyLayout.yaxis, title: "Score", zeroline: true, zerolinecolor: "#4a4e5a" },
-    barmode: "group",
+    annotations,
+    title: { text: `Cross-Commodity Correlations (${crossCorr.months_analyzed} months)`, font: { size: 14 } },
   }, plotlyConfig);
 }
 
@@ -304,7 +313,7 @@ async function init() {
     renderPriceChart(commodities);
     renderWeatherChart(weather);
     renderCropChart(crops);
-    renderCorrelationChart(commodities);
+    renderCorrelationChart(commodities, signals);
     renderSignals(signals);
   } catch (err) {
     console.error("Dashboard init error:", err);

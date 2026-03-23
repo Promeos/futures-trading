@@ -215,9 +215,13 @@ def _build_signals(results):
     """
     signals = results.get("signals", [])
     geopolitical = results.get("geopolitical", {})
+    cross_corr = results.get("cross_commodity_correlations", {})
+    yield_price = results.get("yield_price_correlation", {})
 
     return {
         "signals": signals,
+        "cross_commodity_correlations": cross_corr,
+        "yield_price_correlation": yield_price,
         "geopolitical_events": geopolitical.get("events", [])[:50]
         if geopolitical
         else [],
